@@ -14,6 +14,9 @@
 
     <properties>
         <krazo.version>1.0.0</krazo.version>
+
+        <testcontainers.version>1.14.3</testcontainers.version>
+
         <client.truststore>${project.build.directory}/keystore.p12</client.truststore>
         <client.truststore.password>b4kBMqf6Y4pV</client.truststore.password>
 
@@ -117,6 +120,11 @@
             <version>${krazo.version}</version>
         </dependency>
         <dependency>
+            <groupId>com.rabbitmq</groupId>
+            <artifactId>amqp-client</artifactId>
+            <version>5.7.1</version>
+        </dependency>
+        <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>1.2.3</version>
@@ -190,6 +198,18 @@
             <groupId>org.jboss.weld.se</groupId>
             <artifactId>weld-se-core</artifactId>
             <version>3.1.1.Final</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
