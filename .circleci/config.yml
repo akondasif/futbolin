@@ -1,7 +1,5 @@
 version: 2
 
-machine: true
-
 workflows:
   version: 2
   build:
@@ -31,11 +29,10 @@ workflows:
 
 jobs:
   build:
-    docker:
-      - image: circleci/openjdk:11-jdk-sid-node
+    machine:
+      image: ubuntu-1604:202004-01
     steps:
       - checkout
-      - setup_remote_docker
       - restore_cache:
           key: futbolin-{{ .Branch }}-{{ checksum "pom.xml" }}
 
