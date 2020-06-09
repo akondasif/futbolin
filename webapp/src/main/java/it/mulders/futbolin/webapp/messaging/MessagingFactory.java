@@ -84,9 +84,10 @@ public class MessagingFactory {
      * Helper method to open a RabbitMQ {@link Channel} using a new RabbitMQ {@link Connection}.
      * The connection is stored in {@link #openedConnections} so it can be properly closed when needed.
      * @return A fresh {@link Channel}.
-     * @throws MessagingConfigurationException When a RabbitMQ connection or {@link Channel} could not be opened.
+     * @throws IOException When a RabbitMQ connection or {@link Channel} could not be opened.
+     * @throws TimeoutException When a RabbitMQ connection or {@link Channel} could not be opened.
      */
-    private Channel createChannel() throws MessagingConfigurationException {
+    private Channel createChannel() throws IOException, TimeoutException {
         try {
             var connection = connectionFactory.newConnection();
             connection.setId(Long.toString(connectionId.incrementAndGet()));
@@ -98,8 +99,8 @@ public class MessagingFactory {
             log.info("Opened RabbitMQ connection {}....", connection.getId());
             return connection.createChannel();
         } catch (TimeoutException | IOException e) {
-            log.error("Could not open connection to RabbitMQ", e);
-            throw new MessagingConfigurationException(e);
+            log.error("Could not open connection to RabbitMQ due to ", e.getMessage());
+            throw e;
         }
     }
 
@@ -136,7 +137,7 @@ public class MessagingFactory {
             channel.queueDeclare(queueName, DURABLE, NOT_EXCLUSIVE, NO_AUTO_DELETE, emptyMap());
 
             return new Queue(channel, queueName);
-        } catch (IOException e) {
+        } catch (TimeoutException | IOException e) {
             log.error("Could not construct an instance of Queue for queue {}", queueName, e);
             throw new MessagingConfigurationException(e);
         }
@@ -157,7 +158,7 @@ public class MessagingFactory {
             // Declare the temporary queue.
             var result = channel.queueDeclare();
             return new Queue(channel, result.getQueue());
-        } catch (IOException e) {
+        } catch (TimeoutException | IOException e) {
             log.error("Could not declare a temporary queue", e);
             throw new MessagingConfigurationException(e);
         }

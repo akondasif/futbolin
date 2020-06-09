@@ -9,8 +9,9 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.CreationException;
 import javax.enterprise.inject.Produces;
-import javax.inject.Named;
 
 @Testcontainers
 @Slf4j
@@ -21,7 +22,7 @@ class MessagingIT implements WithAssertions {
             .addBeanClass(DefaultMessageSender.class)
             .addBeanClass(MessagingFactory.class)
             .addBeanClass(Queue.class)
-            .addBeanClass(MessagingConfigFactory.class)
+            .addBeanClass(ValidMessagingConfigFactory.class)
             .addBeanClass(PingService.class)
             .addBeanClass(PingReceiver.class)
             .addBeanClass(EchoResponder.class)
@@ -35,8 +36,8 @@ class MessagingIT implements WithAssertions {
     @Container
     public static GenericContainer<?> rabbitmq = new GenericContainer<>(RABBITMQ).withExposedPorts(5672);
 
-    @Named
-    static class MessagingConfigFactory {
+    @ApplicationScoped
+    static class ValidMessagingConfigFactory {
         @Produces
         public MessagingConfig messagingConfig() {
             var port = rabbitmq.getFirstMappedPort();
@@ -44,10 +45,18 @@ class MessagingIT implements WithAssertions {
         }
     }
 
-    private EchoService echoService = container.select(EchoService.class).get();
-    private EchoResponder echoResponder = container.select(EchoResponder.class).get();
-    private PingService pingService = container.select(PingService.class).get();
-    private PingReceiver pingReceiver = container.select(PingReceiver.class).get();
+    @ApplicationScoped
+    static class InvalidMessagingConfigFactory {
+        @Produces
+        public MessagingConfig messagingConfig() {
+            return new MessagingConfig("foobarbaz", 5627, RABBITMQ_USER, RABBITMQ_PASSWORD);
+        }
+    }
+
+    private final EchoService echoService = container.select(EchoService.class).get();
+    private final EchoResponder echoResponder = container.select(EchoResponder.class).get();
+    private final PingService pingService = container.select(PingService.class).get();
+    private final PingReceiver pingReceiver = container.select(PingReceiver.class).get();
 
     @Test
     void should_work_in_rpc_style() throws MessagingException {
@@ -83,4 +92,31 @@ class MessagingIT implements WithAssertions {
         assertThat(delivery.getProperties().getReplyTo()).isNull();
     }
 
+    @Test
+    void should_not_work_with_invalid_configuration() {
+        var weld = new Weld()
+                .disableDiscovery()
+                .addBeanClass(DefaultMessageReceiver.class)
+                .addBeanClass(DefaultMessageSender.class)
+                .addBeanClass(MessagingFactory.class)
+                .addBeanClass(Queue.class)
+                .addBeanClass(InvalidMessagingConfigFactory.class)
+                .addBeanClass(PingService.class)
+                .addBeanClass(PingReceiver.class)
+                .addBeanClass(EchoResponder.class)
+                .addBeanClass(EchoService.class);
+        var container = weld.initialize();
+
+        assertThatExceptionOfType(CreationException.class).isThrownBy(() -> {
+            var responder = container.select(EchoResponder.class).get();
+            assertThat(responder).isNotNull();
+            assertThat(responder.getQueue()).isNotNull();
+        });
+
+        assertThatExceptionOfType(CreationException.class).isThrownBy(() -> {
+            var service = container.select(EchoService.class).get();
+            assertThat(service).isNotNull();
+            assertThat(service.getResponseQueue()).isNotNull();
+        });
+    }
 }

@@ -1,5 +1,6 @@
 package it.mulders.futbolin.webapp.messaging;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -17,6 +18,7 @@ public class EchoService {
     @NamedQueue(queueName = QUEUE_NAME)
     private MessageSender sender;
 
+    @Getter
     @Inject
     @TemporaryQueue
     private Queue responseQueue;
