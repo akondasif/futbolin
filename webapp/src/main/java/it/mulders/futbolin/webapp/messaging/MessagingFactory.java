@@ -64,9 +64,9 @@ public class MessagingFactory {
         try {
             var connection = connectionFactory.newConnection();
             connection.setId(Long.toString(connectionId.incrementAndGet()));
-            connection.addShutdownListener(cause -> {
-                log.debug("Closing connection {} due to {}", connection.getId(), cause.getLocalizedMessage());
-            });
+            connection.addShutdownListener(
+                cause -> log.debug("Closing connection {} due to {}", connection.getId(), cause.getLocalizedMessage())
+            );
             log.info("Opened RabbitMQ connection {}....", connection.getId());
             return connection.createChannel();
         } catch (TimeoutException | IOException e) {
