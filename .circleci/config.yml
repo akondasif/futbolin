@@ -40,7 +40,7 @@ jobs:
           name: Install Java 11
           command: |
             sudo apt-get update
-            sudo apt-get install openjdk-11-jdk
+            sudo apt-get install openjdk-11-jdk-headless
 
       - run:
           name: Download dependencies and plugins
