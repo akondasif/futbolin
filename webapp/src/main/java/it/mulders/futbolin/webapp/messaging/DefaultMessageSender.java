@@ -12,7 +12,7 @@ public class DefaultMessageSender implements MessageSender {
     private final Queue queue;
 
     @Override
-    public void sendMessage(final RequestEnvelope request) {
+    public void sendMessage(final RequestEnvelope request) throws MessagingException {
         final var properties = new AMQP.BasicProperties.Builder()
                 .correlationId(request.correlationId)
                 .deliveryMode(PERSISTENT)

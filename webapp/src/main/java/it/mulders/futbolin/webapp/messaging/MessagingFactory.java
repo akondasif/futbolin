@@ -84,8 +84,9 @@ public class MessagingFactory {
      * Helper method to open a RabbitMQ {@link Channel} using a new RabbitMQ {@link Connection}.
      * The connection is stored in {@link #openedConnections} so it can be properly closed when needed.
      * @return A fresh {@link Channel}.
+     * @throws MessagingConfigurationException When a RabbitMQ connection or {@link Channel} could not be opened.
      */
-    private Channel createChannel() {
+    private Channel createChannel() throws MessagingConfigurationException {
         try {
             var connection = connectionFactory.newConnection();
             connection.setId(Long.toString(connectionId.incrementAndGet()));
@@ -98,7 +99,7 @@ public class MessagingFactory {
             return connection.createChannel();
         } catch (TimeoutException | IOException e) {
             log.error("Could not open connection to RabbitMQ", e);
-            throw new MessagingException(e);
+            throw new MessagingConfigurationException(e);
         }
     }
 
@@ -106,10 +107,12 @@ public class MessagingFactory {
      * Injects a {@link MessageSender} instance at the given {@code InjectionPoint}.
      * @param injectionPoint The injection point where the {@link MessageSender} is requested.
      * @return The {@link MessageSender} instance.
+     * @throws MessagingConfigurationException When a RabbitMQ connection or {@link Channel} could not be opened, or
+     * when the queue could not be declared.
      */
     @NamedQueue(queueName = "")
     @Produces
-    public MessageSender messageSender(final InjectionPoint injectionPoint) {
+    public MessageSender messageSender(final InjectionPoint injectionPoint) throws MessagingConfigurationException {
         return new DefaultMessageSender(queue(injectionPoint));
     }
 
@@ -118,10 +121,12 @@ public class MessagingFactory {
      * Useful for referring to request queues that may already exist and are potentially shared with other consumers.
      * @param injectionPoint The point where the {@link Queue} is going to be injected.
      * @return A {@link Queue} instance for the declared queue.
+     * @throws MessagingConfigurationException When a RabbitMQ connection or {@link Channel} could not be opened, or
+     * when the queue could not be declared.
      */
     @NamedQueue(queueName = "")
     @Produces
-    public Queue queue(final InjectionPoint injectionPoint) {
+    public Queue queue(final InjectionPoint injectionPoint) throws MessagingConfigurationException {
         var annotated = injectionPoint.getAnnotated();
         var usesQueue = annotated.getAnnotation(NamedQueue.class);
         var queueName = usesQueue.queueName();
@@ -133,7 +138,7 @@ public class MessagingFactory {
             return new Queue(channel, queueName);
         } catch (IOException e) {
             log.error("Could not construct an instance of Queue for queue {}", queueName, e);
-            throw new MessagingException(e);
+            throw new MessagingConfigurationException(e);
         }
     }
 
@@ -141,10 +146,12 @@ public class MessagingFactory {
      * Declare a temporary (exclusive for this consumer, auto-deleted when the consumer disconnects, non-durable) queue.
      * Useful for creating response queues that are guaranteed to not conflict with other consumers.
      * @return A {@link Queue} instance for the declared queue.
+     * @throws MessagingConfigurationException When a RabbitMQ connection or {@link Channel} could not be opened, or
+     * when the queue could not be declared.
      */
     @Produces
     @TemporaryQueue
-    public Queue temporaryQueue() {
+    public Queue temporaryQueue() throws MessagingConfigurationException {
         try {
             var channel = createChannel();
             // Declare the temporary queue.
@@ -152,7 +159,7 @@ public class MessagingFactory {
             return new Queue(channel, result.getQueue());
         } catch (IOException e) {
             log.error("Could not declare a temporary queue", e);
-            throw new MessagingException(e);
+            throw new MessagingConfigurationException(e);
         }
     }
 }

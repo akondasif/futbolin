@@ -19,7 +19,7 @@ public class PingService {
         return request.getBytes(StandardCharsets.UTF_8);
     }
 
-    public void ping(final String request) {
+    public void ping(final String request) throws MessagingException {
         var message = buildEnvelope(request);
         sender.sendMessage(message);
     }

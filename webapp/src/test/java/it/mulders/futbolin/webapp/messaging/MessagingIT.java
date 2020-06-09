@@ -50,7 +50,7 @@ public class MessagingIT implements WithAssertions {
     private PingReceiver pingReceiver = container.select(PingReceiver.class).get();
 
     @Test
-    void should_work_in_rpc_style() {
+    void should_work_in_rpc_style() throws MessagingException {
         // Make sure the responder is invoked, otherwise this.echoResponder will only be the Weld proxy and the actual
         // instance will not have been started.
         var queue = echoResponder.getQueue();
@@ -67,7 +67,7 @@ public class MessagingIT implements WithAssertions {
     }
 
     @Test
-    void should_work_in_fire_forget_style() throws InterruptedException {
+    void should_work_in_fire_forget_style() throws InterruptedException, MessagingException {
         // Make sure the receiver is invoked, otherwise this.pingReceiver will only be the Weld proxy and the actual
         // instance will not have been started.
         var queue = pingReceiver.getQueue();

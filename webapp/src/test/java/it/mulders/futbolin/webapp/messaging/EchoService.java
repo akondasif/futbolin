@@ -29,7 +29,7 @@ public class EchoService {
         return new String(bytes, StandardCharsets.UTF_8);
     }
 
-    public CompletionStage<String> echo(final String request) {
+    public CompletionStage<String> echo(final String request) throws MessagingException {
         var message = buildEnvelope(request, responseQueue);
         var receiver = new DefaultMessageReceiver(responseQueue);
         var response = receiver.awaitResponse(message.correlationId);
