@@ -6,14 +6,11 @@ import com.rabbitmq.client.ConnectionFactory;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.spi.InjectionPoint;
 import javax.inject.Inject;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -40,12 +37,6 @@ public class MessagingFactory {
     private final ConnectionFactory connectionFactory = new ConnectionFactory();
 
     /**
-     * Keeps track of all connections that have been opened so they can be properly closed when the application shuts
-     * down.
-     */
-    private final Set<Connection> openedConnections = new HashSet<>();
-
-    /**
      * Counter to generate unique connection identifiers.
      */
     private final AtomicLong connectionId = new AtomicLong(0);
@@ -62,27 +53,8 @@ public class MessagingFactory {
         connectionFactory.setPassword(messagingConfig.getPassword());
     }
 
-    @PreDestroy
-    public void cleanup() {
-        openedConnections.forEach(this::silentlyCloseConnection);
-    }
-
-    private void silentlyCloseConnection(final Connection connection) {
-        try {
-            if (connection.isOpen()) {
-                log.info("Closing connection {}", connection.getId());
-                connection.close();
-            } else {
-                log.debug("Connection {} is already closed", connection.getId());
-            }
-        } catch (IOException e) {
-            log.error("Could not properly close connection {}", connection.getId(), e);
-        }
-    }
-
     /**
      * Helper method to open a RabbitMQ {@link Channel} using a new RabbitMQ {@link Connection}.
-     * The connection is stored in {@link #openedConnections} so it can be properly closed when needed.
      * @return A fresh {@link Channel}.
      * @throws IOException When a RabbitMQ connection or {@link Channel} could not be opened.
      * @throws TimeoutException When a RabbitMQ connection or {@link Channel} could not be opened.
@@ -91,15 +63,13 @@ public class MessagingFactory {
         try {
             var connection = connectionFactory.newConnection();
             connection.setId(Long.toString(connectionId.incrementAndGet()));
-            openedConnections.add(connection);
             connection.addShutdownListener(cause -> {
                 log.debug("Closing connection {} due to {}", connection.getId(), cause.getLocalizedMessage());
-                openedConnections.remove(connection);
             });
             log.info("Opened RabbitMQ connection {}....", connection.getId());
             return connection.createChannel();
         } catch (TimeoutException | IOException e) {
-            log.error("Could not open connection to RabbitMQ due to ", e.getMessage());
+            log.error("Could not open connection to RabbitMQ due to {}", e.getMessage());
             throw e;
         }
     }
