@@ -59,6 +59,7 @@ public class MessagingFactory {
      * @throws IOException When a RabbitMQ connection or {@link Channel} could not be opened.
      * @throws TimeoutException When a RabbitMQ connection or {@link Channel} could not be opened.
      */
+    @SuppressWarnings("java:S2095") // connections are properly closed when the injection point is destroyed.
     private Channel createChannel() throws IOException, TimeoutException {
         try {
             var connection = connectionFactory.newConnection();
