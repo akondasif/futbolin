@@ -41,7 +41,7 @@ jobs:
           command: |
             sudo apt-get update
             sudo apt-get install openjdk-11-jdk-headless
-            update-java-alternatives --list
+            sudo update-java-alternatives --set java-1.11.0-openjdk-amd64
 
       - run:
           name: Download dependencies and plugins
