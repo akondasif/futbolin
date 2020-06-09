@@ -37,6 +37,12 @@ jobs:
           key: futbolin-{{ .Branch }}-{{ checksum "pom.xml" }}
 
       - run:
+          name: Install Java 11
+          command: |
+            sudo apt-get update
+            sudo apt-get install openjdk-11-jdk
+
+      - run:
           name: Download dependencies and plugins
           command: mvn dependency:go-offline -P coverage -P docker
       - save_cache:
