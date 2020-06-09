@@ -14,7 +14,7 @@ import javax.inject.Named;
 
 @Testcontainers
 @Slf4j
-public class MessagingIT implements WithAssertions {
+class MessagingIT implements WithAssertions {
     private static final Weld weld = new Weld()
             .disableDiscovery()
             .addBeanClass(DefaultMessageReceiver.class)
