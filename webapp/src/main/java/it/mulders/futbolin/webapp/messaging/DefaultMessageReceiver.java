@@ -35,7 +35,7 @@ public class DefaultMessageReceiver implements MessageReceiver {
         }
     }
 
-    private final CancelCallback cancelCallback = consumerTag -> {
+    private static final CancelCallback cancelCallback = consumerTag -> {
         // Nothing to do
     };
 
