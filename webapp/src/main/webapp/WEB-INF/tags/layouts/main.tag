@@ -27,7 +27,7 @@
                 <div class="md-0">
                     <div class="dropdown">
                         <button class="btn btn-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="userDropdownMenuButton">
-                            ${pageContext.request.userPrincipal.name}
+                            ${pageContext.request.userPrincipal.displayName}
                         </button>
                         <div class="dropdown-menu" aria-labelledby="userDropdownMenuButton">
                             <a class="dropdown-item" href="/app/logout">Log off</a>
