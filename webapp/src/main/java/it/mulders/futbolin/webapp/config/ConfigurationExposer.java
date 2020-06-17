@@ -7,6 +7,8 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.spi.InjectionPoint;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Properties;
 
 /**
@@ -19,17 +21,24 @@ import java.util.Properties;
 @ApplicationScoped
 @Slf4j
 public class ConfigurationExposer {
-    private static final String CONFIG_PATH = "/application.properties";
+    static final String CONFIG_PATH_PROPERTY = "config.file";
     private final Properties properties = new Properties();
 
     @PostConstruct
     public void loadProperties() {
-        try (var input = ConfigurationExposer.class.getResourceAsStream(CONFIG_PATH)) {
+        var configFileLocation = System.getProperty(CONFIG_PATH_PROPERTY);
+        if (configFileLocation == null) {
+            log.error("Could not init configuration. Specify a path to the configuration file with -D{}", CONFIG_PATH_PROPERTY);
+            throw new IllegalArgumentException("Could not init configuration, no configuration file given");
+        }
+
+        log.info("Loading configuration file {}", configFileLocation);
+        try (var input = Files.newInputStream(Paths.get(configFileLocation))) {
             properties.load(input);
-            log.info("{} configuration value(s) loaded from {}", properties.size(), CONFIG_PATH);
+            log.info("{} configuration value(s) loaded from {}", properties.size(), CONFIG_PATH_PROPERTY);
         } catch (IOException e) {
-            log.error("Could not init configuration from {}", CONFIG_PATH, e);
-            throw new IllegalStateException("Could not init configuration", e);
+            log.error("Could not init configuration from {}", CONFIG_PATH_PROPERTY, e);
+            throw new IllegalArgumentException("Could not init configuration, " + configFileLocation + " could not be read", e);
         }
     }
 

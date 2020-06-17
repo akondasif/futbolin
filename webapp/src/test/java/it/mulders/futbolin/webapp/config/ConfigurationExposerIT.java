@@ -3,6 +3,7 @@ package it.mulders.futbolin.webapp.config;
 import org.assertj.core.api.WithAssertions;
 import org.jboss.weld.environment.se.Weld;
 import org.jboss.weld.environment.se.WeldContainer;
+import org.jboss.weld.exceptions.WeldException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,7 @@ class ConfigurationExposerIT implements WithAssertions {
 
     @BeforeAll
     public static void setup() {
+        System.setProperty(ConfigurationExposer.CONFIG_PATH_PROPERTY, "src/test/resources/application.properties");
         var weld = new Weld()
                 .disableDiscovery()
                 .addBeanClass(Dummy.class)
@@ -45,7 +47,48 @@ class ConfigurationExposerIT implements WithAssertions {
 
     @AfterAll
     public static void close() {
+        System.clearProperty(ConfigurationExposer.CONFIG_PATH_PROPERTY);
         container.shutdown();
+    }
+
+    @Test
+    void when_config_path_not_existing_should_fail() {
+        var throwable = catchThrowable(() -> {
+            System.setProperty(ConfigurationExposer.CONFIG_PATH_PROPERTY, "foo");
+            var weld = new Weld()
+                    .disableDiscovery()
+                    .addBeanClass(Dummy.class)
+                    .addBeanClass(ConfigurationExposer.class);
+            var dummy = weld.initialize().select(Dummy.class).get();
+        });
+        assertThat(throwable)
+                .isInstanceOf(WeldException.class)
+                .hasMessageContaining("WELD-000049");
+        //The cause of the WeldException is an InvocationTargetException, whose cause is the Exception our code throws.
+        var cause = throwable.getCause().getCause();
+        assertThat(cause)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("foo could not be read");
+    }
+
+    @Test
+    void when_config_path_not_specified_should_fail() {
+        var throwable = catchThrowable(() -> {
+            System.clearProperty(ConfigurationExposer.CONFIG_PATH_PROPERTY);
+            var weld = new Weld()
+                    .disableDiscovery()
+                    .addBeanClass(Dummy.class)
+                    .addBeanClass(ConfigurationExposer.class);
+            var dummy = weld.initialize().select(Dummy.class).get();
+        });
+        assertThat(throwable)
+                .isInstanceOf(WeldException.class)
+                .hasMessageContaining("WELD-000049");
+        //The cause of the WeldException is an InvocationTargetException, whose cause is the Exception our code throws.
+        var cause = throwable.getCause().getCause();
+        assertThat(cause)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("no configuration file given");
     }
 
     @Test
