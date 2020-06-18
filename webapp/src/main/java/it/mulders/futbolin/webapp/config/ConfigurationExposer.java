@@ -21,23 +21,27 @@ import java.util.Properties;
 @ApplicationScoped
 @Slf4j
 public class ConfigurationExposer {
-    static final String CONFIG_PATH_PROPERTY = "config.file";
+    private static final String CONFIG_PATH_VARIABLE = "CONFIGURATION_FILE";
     private final Properties properties = new Properties();
 
     @PostConstruct
     public void loadProperties() {
-        var configFileLocation = System.getProperty(CONFIG_PATH_PROPERTY);
+        loadProperties(System.getenv(CONFIG_PATH_VARIABLE));
+    }
+
+    // Visible for testing
+    void loadProperties(final String configFileLocation) {
         if (configFileLocation == null) {
-            log.error("Could not init configuration. Specify a path to the configuration file with -D{}", CONFIG_PATH_PROPERTY);
+            log.error("Could not init configuration. Specify a path to the configuration file with the {} environment variable", CONFIG_PATH_VARIABLE);
             throw new IllegalArgumentException("Could not init configuration, no configuration file given");
         }
 
         log.info("Loading configuration file {}", configFileLocation);
         try (var input = Files.newInputStream(Paths.get(configFileLocation))) {
             properties.load(input);
-            log.info("{} configuration value(s) loaded from {}", properties.size(), CONFIG_PATH_PROPERTY);
+            log.info("{} configuration value(s) loaded from {}", properties.size(), configFileLocation);
         } catch (IOException e) {
-            log.error("Could not init configuration from {}", CONFIG_PATH_PROPERTY, e);
+            log.error("Could not init configuration from {}", configFileLocation, e);
             throw new IllegalArgumentException("Could not init configuration, " + configFileLocation + " could not be read", e);
         }
     }
