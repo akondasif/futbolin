@@ -28,6 +28,7 @@ public class DefaultUserService implements UserService {
     @Override
     public void notifyUserLoggedIn(final FutbolinUser principal) throws MessagingException {
         var message = buildEnvelope(principal);
+        log.info("Registering login of user {}", principal.getId());
         sender.sendMessage(message);
     }
 
